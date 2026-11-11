@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#3d3044">
+  <meta name="description" content="LastCall matches tonight's bakery surplus with people nearby and holds payment until pickup.">
+  <title>LastCall — good food deserves a good ending</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght,SOFT,WONK@9..144,500,30,1;9..144,600,30,1;9..144,700,30,1&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css">
+  <script type="module" src="/app.js"></script>
+</head>
+<body>
+  <div class="announcement"><span class="live-dot"></span> Maple &amp; Rye closes at 6:15 PM <span class="announcement-end">Fresh finds, picked up today</span></div>
+  <header class="site-header wrap">
+    <a class="brand" href="/" aria-label="LastCall home"><span class="brand-mark">✳</span><span>lastcall<span class="brand-period">.</span></span></a>
+    <nav class="view-switch" aria-label="App view">
+      <button type="button" id="shopTab" class="view-tab active" aria-current="page">Find food</button>
+      <button type="button" id="bakeryTab" class="view-tab">Bakery counter <span id="orderCount" class="count-badge">0</span></button>
+    </nav>
+    <div id="modePill" class="mode-pill">Loading…</div>
+  </header>
+
+  <main>
+    <section id="shopView">
+      <div class="hero wrap">
+        <div class="hero-copy">
+          <div class="handwritten">The good stuff, right on time.</div>
+          <h1>Good food<br>deserves a <em>good ending.</em></h1>
+          <p>Fresh from the oven this morning. Yours for less before the day is done. Tell us what sounds good and we’ll put together a little rescue bundle.</p>
+          <div class="hero-facts"><span><strong>Up to 40% less</strong><br>than morning prices</span><span class="fact-divider"></span><span><strong>Pick up tonight</strong><br>at Maple &amp; Rye</span></div>
+        </div>
+        <div class="hero-art" aria-label="Illustration of tonight's bakery rescue bag" role="img">
+          <div class="art-sun"></div><div class="art-spark art-spark-one">✳</div><div class="art-spark art-spark-two">✳</div>
+          <div class="paper-bag"><div class="bag-handle"></div><div class="bag-fold"></div><span class="bag-word">good<br>things<br>inside.</span><span class="bag-stamp">M &amp; R</span></div>
+          <div class="floating-food food-one">🥐</div><div class="floating-food food-two">🍞</div><div class="floating-food food-three">🍅</div>
+          <div class="art-caption">today’s bake <span>↗</span> tonight’s table</div>
+        </div>
+      </div>
+
+      <div class="workspace wrap">
+        <div class="workspace-heading"><div><span class="section-script">Made for your evening</span><h2>Build your rescue bag</h2></div><p>Every pick comes from what’s actually left on the shelf.</p></div>
+        <div class="builder-grid">
+          <form id="matchForm" class="builder-form">
+            <label for="requestInput">What are you in the mood for?</label>
+            <textarea id="requestInput" name="request" rows="3" maxlength="300" placeholder="Something savory for dinner, maybe a little treat…" required>I need a savory dinner and a little sweet treat.</textarea>
+            <div class="form-row">
+              <div class="field"><label for="budgetInput">Your budget</label><div class="money-input"><span>$</span><input id="budgetInput" name="budget" type="number" min="2.50" max="50" step="0.50" value="15" required></div></div>
+              <div class="field"><label for="pickupInput">Pickup time</label><select id="pickupInput" name="pickupWindow"></select></div>
+            </div>
+            <fieldset class="allergy-field"><legend>Anything to leave out?</legend><div class="allergy-options"><label><input type="checkbox" value="nuts" checked><span>Nuts</span></label><label><input type="checkbox" value="dairy"><span>Dairy</span></label><label><input type="checkbox" value="eggs"><span>Eggs</span></label><label><input type="checkbox" value="gluten"><span>Gluten</span></label></div></fieldset>
+            <p class="allergy-note">We exclude listed allergens from the match. Ask the bakery about shared equipment before pickup.</p>
+            <button class="primary-button match-button" type="submit" id="matchButton">Find my bundle <span aria-hidden="true">↗</span></button>
+          </form>
+          <div id="bundlePanel" class="bundle-panel" aria-live="polite">
+            <div class="bundle-empty"><div class="bundle-empty-art">✳</div><h3>A bag with your name on it.</h3><p>Share what you’re craving and we’ll find a fit from today’s bakes.</p><div class="curved-arrow">↖</div></div>
+          </div>
+        </div>
+      </div>
+
+      <section class="shelf-section"><div class="wrap"><div class="shelf-head"><div><span class="section-script">Still on the shelf</span><h2>Tonight’s bake</h2></div><span id="itemTotal" class="shelf-total"></span></div><div id="inventoryGrid" class="inventory-grid"></div></div></section>
+    </section>
+
+    <section id="bakeryView" class="bakery-view wrap" hidden>
+      <div class="counter-header"><div><span class="section-script">Maple &amp; Rye bakery</span><h1>Tonight’s counter</h1><p>Every pickup closes the loop between rescued food and a completed payment.</p></div><div class="counter-badge">Closing at <strong>6:15 PM</strong></div></div>
+      <div class="stats-row"><div><span id="statAvailable">—</span><p>items ready to rescue</p></div><div><span id="statReserved">—</span><p>awaiting pickup</p></div><div><span id="statSaved">—</span><p>items rescued</p></div><div><span id="statValue">—</span><p>morning value saved</p></div></div>
+      <div id="bakeryPinField" class="bakery-pin-field" hidden><label for="bakeryPinInput">Bakery PIN for payment actions</label><input id="bakeryPinInput" type="password" autocomplete="off" placeholder="Enter your PIN"><p>This PIN stays in this browser tab.</p></div>
+      <div class="orders-heading"><div><span class="section-script">Live pickup list</span><h2>Orders</h2></div><button type="button" id="refreshButton" class="text-button">Refresh orders ↻</button></div>
+      <div id="ordersList" class="orders-list"></div>
+      <div class="stock-heading"><div><span class="section-script">End-of-day count</span><h2>What’s left on the shelf</h2></div><p>Update available quantities as the bakery closes.</p></div>
+      <div id="stockList" class="stock-list"></div>
+      <div class="counter-foot"><span>✳</span><p>For this hackathon demo, the bakery counter is open on the same device. Add staff sign-in before using it with real customers.</p><button type="button" id="resetButton" class="text-button" hidden>Reset demo</button></div>
+    </section>
+  </main>
+  <footer class="site-footer"><div class="wrap footer-inner"><span class="footer-brand">lastcall.</span><span>Good food, a second chance.</span><span>Powered by AI matching + PayPal sandbox</span></div></footer>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+</body>
+</html>
