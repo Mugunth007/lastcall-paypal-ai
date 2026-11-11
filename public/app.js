@@ -6,6 +6,94 @@ let selectedMatch = null;
 let currentOrder = null;
 let activeView = 'shop';
 let toastTimer;
+let playingAudio = null;
+let audioUrl = null;
+let speaking = false;
+let voiceRequest = 0;
+const browserVoiceText = {
+  welcome: 'Welcome to LastCall. Tell us what you are craving, set your budget, and we will build a rescue bag from tonight’s fresh bakes.',
+  matched: 'Your rescue bag is ready. Every item was checked against your budget and the ingredients you asked us to leave out.',
+  reserved: 'Your bag is reserved. Approve the test payment to reveal your pickup code.',
+  pickup: 'You are all set. Show your six digit code at the bakery counter. Payment is captured only when you pick up your food.',
+  completed: 'Rescued and ready to enjoy. Thanks for giving good food a second chance.',
+  counter: 'Welcome to the bakery counter. Update what is left, then confirm each pickup with the customer’s code.'
+};
+
+function voiceCue() {
+  if (activeView === 'bakery') return 'counter';
+  if (currentOrder?.status === 'completed') return 'completed';
+  if (currentOrder?.status === 'authorized') return 'pickup';
+  if (currentOrder?.status === 'pending_payment') return 'reserved';
+  if (selectedMatch?.items?.length) return 'matched';
+  return 'welcome';
+}
+function stopVoice() {
+  voiceRequest++;
+  if (playingAudio) { playingAudio.pause(); playingAudio = null; }
+  if (audioUrl) { URL.revokeObjectURL(audioUrl); audioUrl = null; }
+  if ('speechSynthesis' in window) speechSynthesis.cancel();
+  speaking = false;
+  $('#voiceButton').setAttribute('aria-pressed', 'false');
+  $('#voiceButton').setAttribute('aria-label', 'Play voice guide');
+  $('#voiceButton .voice-label').textContent = 'Listen';
+}
+function browserSpeak(text) {
+  if (!('speechSynthesis' in window)) { toast('Voice playback is not available in this browser.', true); stopVoice(); return; }
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = 'en-US'; utterance.rate = 0.94; utterance.pitch = 0.98;
+  const voices = speechSynthesis.getVoices();
+  utterance.voice = voices.find((voice) => /Jenny|Aria|Samantha/i.test(voice.name) && voice.lang.startsWith('en')) || voices.find((voice) => voice.lang.startsWith('en')) || null;
+  utterance.onend = stopVoice;
+  utterance.onerror = stopVoice;
+  speechSynthesis.speak(utterance);
+}
+async function playVoice() {
+  if (speaking) { stopVoice(); return; }
+  speaking = true;
+  const requestId = ++voiceRequest;
+  $('#voiceButton').setAttribute('aria-pressed', 'true');
+  $('#voiceButton').setAttribute('aria-label', 'Stop voice guide');
+  $('#voiceButton .voice-label').textContent = 'Loading voice…';
+  const cue = voiceCue();
+  try {
+    const response = await fetch(`/api/voice/${cue}`);
+    if (!speaking || requestId !== voiceRequest) return;
+    if (!response.ok) {
+      $('#voiceButton .voice-label').textContent = 'Stop voice';
+      browserSpeak(browserVoiceText[cue]);
+      return;
+    }
+    const audioBlob = await response.blob();
+    if (!speaking || requestId !== voiceRequest) return;
+    audioUrl = URL.createObjectURL(audioBlob);
+    playingAudio = new Audio(audioUrl);
+    playingAudio.onended = stopVoice;
+    playingAudio.onerror = () => { stopVoice(); toast('Could not play voice audio.', true); };
+    $('#voiceButton .voice-label').textContent = 'Stop voice';
+    await playingAudio.play();
+  } catch {
+    if (!speaking || requestId !== voiceRequest) return;
+    $('#voiceButton .voice-label').textContent = 'Stop voice';
+    browserSpeak(browserVoiceText[cue]);
+  }
+}
+function celebratePickup() {
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const overlay = document.createElement('div');
+  overlay.className = 'celebrate';
+  const colors = ['#ef7561', '#ffd787', '#8eb9a3', '#bda0c8', '#e8a974'];
+  for (let i = 0; i < 22; i++) {
+    const piece = document.createElement('span');
+    piece.style.setProperty('--confetti', colors[i % colors.length]);
+    piece.style.setProperty('--tx', `${Math.round((Math.random() - .5) * 650)}px`);
+    piece.style.setProperty('--ty', `${Math.round((Math.random() - .4) * 430)}px`);
+    piece.style.setProperty('--rot', `${Math.round((Math.random() - .5) * 1000)}deg`);
+    piece.style.setProperty('--delay', `${Math.round(Math.random() * 150)}ms`);
+    overlay.append(piece);
+  }
+  document.body.append(overlay);
+  setTimeout(() => overlay.remove(), 1700);
+}
 
 function toast(message, error = false) {
   const element = $('#toast');
@@ -144,6 +232,7 @@ async function refresh() {
 
 $('#shopTab').addEventListener('click', () => setView('shop'));
 $('#bakeryTab').addEventListener('click', () => setView('bakery'));
+$('#voiceButton').addEventListener('click', playVoice);
 $('#refreshButton').addEventListener('click', async () => { try { await refresh(); toast('Orders refreshed.'); } catch (error) { toast(error.message, true); } });
 $('#matchForm').addEventListener('submit', async (event) => {
   event.preventDefault();
@@ -194,6 +283,7 @@ $('#ordersList').addEventListener('click', async (event) => {
       if (!pickupCode) throw new Error('Enter the buyer’s six-digit pickup code.');
       await api(`/api/orders/${id}/capture`, { method: 'POST', headers: { 'X-Bakery-Pin': $('#bakeryPinInput').value }, body: JSON.stringify({ pickupCode }) });
       toast('Pickup confirmed. Payment captured.');
+      celebratePickup();
     } else if (button.classList.contains('cancel-button')) {
       await api(`/api/orders/${id}/cancel`, { method: 'POST', headers: { 'X-Bakery-Pin': $('#bakeryPinInput').value }, body: '{}' });
       toast('Reservation cancelled and items returned to the shelf.');

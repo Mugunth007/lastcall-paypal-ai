@@ -1,10 +1,11 @@
 import http from 'node:http';
 import { readFile, writeFile, mkdir, rename } from 'node:fs/promises';
-import { randomUUID, randomInt } from 'node:crypto';
+import { randomUUID, randomInt, createHash } from 'node:crypto';
 import { dirname, extname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { seedInventory, pickupWindows } from './catalog.mjs';
 import { matchWithOllama, normalizeSelection } from './matching.mjs';
+import { voiceCues, elevenLabsSpeech } from './voice.mjs';
 
 const root = dirname(fileURLToPath(import.meta.url));
 const dataPath = process.env.DATA_PATH || join(root, '.data', 'state.json');
@@ -124,6 +125,7 @@ async function paypal(path, { method = 'GET', data, requestId } = {}) {
 }
 
 const busyOrders = new Set();
+const voiceInFlight = new Map();
 async function withOrderLock(id, task) {
   if (busyOrders.has(id)) throw new HttpError(409, 'This order is already being updated.');
   busyOrders.add(id);
@@ -140,8 +142,38 @@ async function handleApi(req, res, url) {
       savedValueCents: state.savedValueCents,
       pickupWindows,
       paymentMode: paypalEnabled ? 'paypal sandbox' : 'demo',
+      voiceMode: process.env.ELEVENLABS_API_KEY ? 'ElevenLabs' : 'browser',
       aiModel: process.env.OLLAMA_MODEL || 'qwen3-1.7b:latest'
     });
+  }
+
+  const voiceAction = url.pathname.match(/^\/api\/voice\/([a-z]+)$/);
+  if (req.method === 'GET' && voiceAction) {
+    const cue = voiceAction[1];
+    const spokenText = voiceCues[cue];
+    if (!spokenText) throw new HttpError(404, 'Voice cue not found.');
+    if (!process.env.ELEVENLABS_API_KEY) return json(res, 503, { error: 'ElevenLabs is not configured.', text: spokenText });
+    const voiceId = process.env.ELEVENLABS_VOICE_ID || 'JBFqnCBsd6RMkjVDRZzb';
+    const modelId = process.env.ELEVENLABS_MODEL_ID || 'eleven_multilingual_v2';
+    const fingerprint = createHash('sha256').update(`${cue}:${voiceId}:${modelId}:${spokenText}`).digest('hex').slice(0, 20);
+    const audioPath = join(root, '.data', 'voice', `${fingerprint}.mp3`);
+    let audio;
+    try { audio = await readFile(audioPath); }
+    catch {
+      if (!voiceInFlight.has(audioPath)) {
+        const job = elevenLabsSpeech(spokenText, { apiKey: process.env.ELEVENLABS_API_KEY, voiceId, modelId })
+          .then(async (generated) => {
+            await mkdir(dirname(audioPath), { recursive: true });
+            await writeFile(audioPath, generated);
+            return generated;
+          })
+          .finally(() => voiceInFlight.delete(audioPath));
+        voiceInFlight.set(audioPath, job);
+      }
+      audio = await voiceInFlight.get(audioPath);
+    }
+    res.writeHead(200, { 'Content-Type': 'audio/mpeg', 'Content-Length': audio.length, 'Cache-Control': 'public, max-age=86400' });
+    return res.end(audio);
   }
 
   if (req.method === 'POST' && url.pathname === '/api/match') {

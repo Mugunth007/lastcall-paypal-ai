@@ -6,9 +6,15 @@
   "scripts": {
     "start": "node server.mjs",
     "dev": "node --watch server.mjs",
-    "test": "node --test"
+    "test": "node --test",
+    "demo:narrate": "node scripts/generate-narration.mjs",
+    "demo:record": "node scripts/record-demo.mjs",
+    "demo:render": "node scripts/render-demo.mjs"
   },
   "engines": {
     "node": ">=20"
+  },
+  "devDependencies": {
+    "playwright-core": "^1.65.0"
   }
 }
