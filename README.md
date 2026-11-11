@@ -7,7 +7,7 @@ LastCall helps a bakery sell its end-of-day surplus. A customer describes what t
 Requires Node.js 20 or newer. No npm packages are needed.
 
 ```powershell
-Copy-Item .env.example .env
+if (-not (Test-Path .env)) { Copy-Item .env.example .env }
 npm start
 ```
 
@@ -24,11 +24,11 @@ Set `OLLAMA_MODEL` in `.env` to an installed model (`ollama list` shows them). T
 ## Connect the PayPal sandbox
 
 1. In the [PayPal Developer Dashboard](https://developer.paypal.com/dashboard/), create or open a **sandbox** REST app attached to a sandbox business account.
-2. Put its sandbox client ID and secret in `.env` as `PAYPAL_CLIENT_ID` and `PAYPAL_CLIENT_SECRET`. Set a private `BAKERY_PIN` for the bakery counter. Keep `.env` out of Git.
+2. Put its sandbox client ID and secret in the prepared `.env` file as `PAYPAL_CLIENT_ID` and `PAYPAL_CLIENT_SECRET`. Set a private `BAKERY_PIN` for the bakery counter. Keep `.env` out of Git.
 3. Keep `PUBLIC_BASE_URL=http://localhost:3000` for local use, or set it to the public HTTPS address that buyers and PayPal can return to.
 4. Restart `npm start`. The header should say **PayPal sandbox connected**. Use a separate sandbox personal account to approve the buyer checkout. Enter the bakery PIN to confirm pickup or cancel an authorization.
 
-The integration uses [Orders v2 authorization](https://developer.paypal.com/platforms/checkout/standard/customize/auth-capture/) and [Payments v2 capture or void](https://developer.paypal.com/api/payments/v2). These are sandbox transactions with test funds. The actual sandbox round trip needs your credentials; the included test suite exercises the same API path against a local PayPal-shaped test provider.
+The integration uses [Orders v2 authorization](https://developer.paypal.com/platforms/checkout/standard/customize/auth-capture/) and [Payments v2 capture or void](https://developer.paypal.com/api/payments/v2). The order is marked as **pickup in store** in PayPal. These are sandbox transactions with test funds. The actual sandbox round trip needs your credentials; the included test suite exercises the same API path against a local PayPal-shaped test provider.
 
 ## Judge walkthrough
 

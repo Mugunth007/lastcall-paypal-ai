@@ -211,6 +211,7 @@ async function handleApi(req, res, url) {
                 currency_code: 'USD', value: (order.totalCents / 100).toFixed(2),
                 breakdown: { item_total: { currency_code: 'USD', value: (order.totalCents / 100).toFixed(2) } }
               },
+              shipping: { type: 'PICKUP_IN_STORE' },
               items: order.items.map((item) => ({ name: item.name, quantity: '1', category: 'PHYSICAL_GOODS', unit_amount: { currency_code: 'USD', value: (item.priceCents / 100).toFixed(2) } }))
             }],
             payment_source: { paypal: { experience_context: { return_url: `${baseUrl}/api/paypal/return?orderId=${id}&buyerToken=${order.buyerToken}`, cancel_url: `${baseUrl}/api/paypal/cancel?orderId=${id}&buyerToken=${order.buyerToken}`, user_action: 'PAY_NOW' } } }

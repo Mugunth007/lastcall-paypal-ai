@@ -153,4 +153,5 @@ test('PayPal sandbox branch authorizes, captures and voids through the provider 
   assert.ok(providerCalls.some((call) => call.path.endsWith('/void') && call.requestId));
   const createCall = providerCalls.find((call) => call.path === '/v2/checkout/orders');
   assert.equal(JSON.parse(createCall.payload).intent, 'AUTHORIZE');
+  assert.equal(JSON.parse(createCall.payload).purchase_units[0].shipping.type, 'PICKUP_IN_STORE');
 });
