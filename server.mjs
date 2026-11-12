@@ -47,7 +47,7 @@ async function loadState() {
   if (remoteState) {
     const blob = await getBlob(stateBlobPath, { access: 'private', useCache: false, token: process.env.BLOB_READ_WRITE_TOKEN });
     if (!blob) return initialState();
-    stateEtag = blob.blob.etag;
+    stateEtag = blob.blob.etag.replace(/^W\//, '');
     return JSON.parse(await new Response(blob.stream).text());
   }
   try { return JSON.parse(await readFile(dataPath, 'utf8')); }
