@@ -108,3 +108,34 @@ export async function matchWithOllama({ inventory, allergens, budgetCents, reque
     clearTimeout(timeout);
   }
 }
+
+let embeddingPipeline;
+async function getEmbeddingPipeline() {
+  if (!embeddingPipeline) {
+    embeddingPipeline = (async () => {
+      const { pipeline, env } = await import('@huggingface/transformers');
+      env.cacheDir = process.env.VERCEL ? '/tmp/lastcall-model-cache' : '.data/model-cache';
+      return pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2', { dtype: 'q8' });
+    })().catch((error) => { embeddingPipeline = null; throw error; });
+  }
+  return embeddingPipeline;
+}
+
+export async function matchWithEmbeddings({ inventory, allergens, budgetCents, request }) {
+  const candidates = safeCandidates(inventory, allergens, budgetCents);
+  if (!candidates.length) return { items: [], reason: 'Nothing in today’s case meets those needs.', source: 'rules' };
+  try {
+    const embed = await getEmbeddingPipeline();
+    const phrases = [request, ...candidates.map((item) => `${item.name}. ${item.category}. ${item.description}`)];
+    const vectors = (await embed(phrases, { pooling: 'mean', normalize: true })).tolist();
+    const query = vectors[0];
+    const rankedIds = candidates.map((item, index) => ({
+      id: item.id,
+      score: query.reduce((sum, value, dimension) => sum + value * vectors[index + 1][dimension], 0)
+    })).sort((a, b) => b.score - a.score).map((item) => item.id);
+    const items = coverRequestedCourses(normalizeSelection(rankedIds, inventory, allergens, budgetCents), inventory, allergens, budgetCents, request);
+    return { items, reason: describeMatch(items), source: 'MiniLM AI' };
+  } catch {
+    return { items: coverRequestedCourses(fallbackMatch(inventory, allergens, budgetCents, request), inventory, allergens, budgetCents, request), reason: 'A fresh selection from today’s case that fits your limits.', source: 'rules fallback' };
+  }
+}

@@ -4,11 +4,15 @@ import { randomUUID, randomInt, createHash } from 'node:crypto';
 import { dirname, extname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { seedInventory, pickupWindows } from './catalog.mjs';
-import { matchWithOllama, normalizeSelection } from './matching.mjs';
+import { matchWithOllama, matchWithEmbeddings, normalizeSelection } from './matching.mjs';
 import { voiceCues, elevenLabsSpeech } from './voice.mjs';
+import { get as getBlob, put as putBlob, BlobPreconditionFailedError } from '@vercel/blob';
 
 const root = dirname(fileURLToPath(import.meta.url));
 const dataPath = process.env.DATA_PATH || join(root, '.data', 'state.json');
+const remoteState = Boolean(process.env.VERCEL && process.env.BLOB_READ_WRITE_TOKEN);
+const stateBlobPath = 'lastcall/state.json';
+let stateEtag = null;
 
 async function loadEnvFile() {
   try {
@@ -22,7 +26,7 @@ async function loadEnvFile() {
 await loadEnvFile();
 
 const port = Number(process.env.PORT || 3000);
-const baseUrl = process.env.PUBLIC_BASE_URL || `http://localhost:${port}`;
+const baseUrl = process.env.PUBLIC_BASE_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : `http://localhost:${port}`);
 const paypalEnabled = Boolean(process.env.PAYPAL_CLIENT_ID && process.env.PAYPAL_CLIENT_SECRET);
 const bakeryPin = process.env.BAKERY_PIN || '';
 const paypalBase = process.env.NODE_ENV === 'test' && process.env.PAYPAL_API_BASE_URL
@@ -40,6 +44,12 @@ function initialState() {
 }
 
 async function loadState() {
+  if (remoteState) {
+    const blob = await getBlob(stateBlobPath, { access: 'private', useCache: false, token: process.env.BLOB_READ_WRITE_TOKEN });
+    if (!blob) return initialState();
+    stateEtag = blob.blob.etag;
+    return JSON.parse(await new Response(blob.stream).text());
+  }
   try { return JSON.parse(await readFile(dataPath, 'utf8')); }
   catch { return initialState(); }
 }
@@ -47,7 +57,16 @@ let state = await loadState();
 let writeQueue = Promise.resolve();
 function persist() {
   const snapshot = JSON.stringify(state, null, 2);
-  writeQueue = writeQueue.then(async () => {
+  writeQueue = writeQueue.catch(() => {}).then(async () => {
+    if (remoteState) {
+      const saved = await putBlob(stateBlobPath, snapshot, {
+        access: 'private', contentType: 'application/json', allowOverwrite: true,
+        token: process.env.BLOB_READ_WRITE_TOKEN,
+        ...(stateEtag ? { ifMatch: stateEtag } : {})
+      });
+      stateEtag = saved.etag;
+      return;
+    }
     await mkdir(dirname(dataPath), { recursive: true });
     const temp = `${dataPath}.${randomUUID()}.tmp`;
     await writeFile(temp, snapshot);
@@ -142,8 +161,8 @@ async function handleApi(req, res, url) {
       savedValueCents: state.savedValueCents,
       pickupWindows,
       paymentMode: paypalEnabled ? 'paypal sandbox' : 'demo',
-      voiceMode: process.env.ELEVENLABS_API_KEY ? 'ElevenLabs' : 'browser',
-      aiModel: process.env.OLLAMA_MODEL || 'qwen3-1.7b:latest'
+      voiceMode: process.env.VERCEL ? 'ElevenLabs static' : process.env.ELEVENLABS_API_KEY ? 'ElevenLabs' : 'browser',
+      aiModel: process.env.VERCEL ? 'Xenova/all-MiniLM-L6-v2' : (process.env.OLLAMA_MODEL || 'qwen3-1.7b:latest')
     });
   }
 
@@ -183,7 +202,9 @@ async function handleApi(req, res, url) {
     const allergens = Array.isArray(input.allergens) ? input.allergens.filter((x) => ['gluten', 'dairy', 'eggs', 'nuts'].includes(x)) : [];
     if (!request) throw new HttpError(400, 'Tell us what you are looking for.');
     if (!Number.isInteger(budgetCents) || budgetCents < 250 || budgetCents > 5000) throw new HttpError(400, 'Budget must be between $2.50 and $50.');
-    const match = await matchWithOllama({ inventory: state.inventory, allergens, budgetCents, request, model: process.env.OLLAMA_MODEL || 'qwen3-1.7b:latest', url: process.env.OLLAMA_URL || 'http://127.0.0.1:11434' });
+    const match = process.env.VERCEL
+      ? await matchWithEmbeddings({ inventory: state.inventory, allergens, budgetCents, request })
+      : await matchWithOllama({ inventory: state.inventory, allergens, budgetCents, request, model: process.env.OLLAMA_MODEL || 'qwen3-1.7b:latest', url: process.env.OLLAMA_URL || 'http://127.0.0.1:11434' });
     return json(res, 200, { ...match, totalCents: match.items.reduce((sum, item) => sum + item.priceCents, 0), budgetCents, allergens });
   }
 
@@ -355,6 +376,20 @@ async function handleApi(req, res, url) {
   throw new HttpError(404, 'Page not found.');
 }
 
+let apiQueue = Promise.resolve();
+async function queuedApi(req, res, url) {
+  const previous = apiQueue;
+  let release;
+  apiQueue = new Promise((resolve) => { release = resolve; });
+  await previous;
+  try {
+    if (remoteState) state = await loadState();
+    return await handleApi(req, res, url);
+  } finally {
+    release();
+  }
+}
+
 const server = http.createServer(async (req, res) => {
   try {
     const url = new URL(req.url, baseUrl);
@@ -364,9 +399,11 @@ const server = http.createServer(async (req, res) => {
       res.writeHead(200, { 'Content-Type': type, 'Cache-Control': 'no-cache' });
       return res.end(content);
     }
-    return await handleApi(req, res, url);
+    return url.pathname.startsWith('/api/voice/')
+      ? await handleApi(req, res, url)
+      : await queuedApi(req, res, url);
   } catch (error) {
-    if (!res.headersSent) json(res, error.status || 500, { error: error.message || 'Unexpected server error.' });
+    if (!res.headersSent) json(res, error instanceof BlobPreconditionFailedError ? 409 : error.status || 500, { error: error instanceof BlobPreconditionFailedError ? 'Another order changed. Refresh and try again.' : error.message || 'Unexpected server error.' });
     else res.end();
   }
 });

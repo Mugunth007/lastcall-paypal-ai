@@ -56,7 +56,8 @@ async function playVoice() {
   $('#voiceButton .voice-label').textContent = 'Loading voice…';
   const cue = voiceCue();
   try {
-    const response = await fetch(`/api/voice/${cue}`);
+    const voiceUrl = appState?.voiceMode === 'ElevenLabs static' ? `/voice/${cue}.mp3` : `/api/voice/${cue}`;
+    const response = await fetch(voiceUrl);
     if (!speaking || requestId !== voiceRequest) return;
     if (!response.ok) {
       $('#voiceButton .voice-label').textContent = 'Stop voice';

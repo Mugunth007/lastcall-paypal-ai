@@ -22,7 +22,7 @@ The app also includes an inventory editor, a live pickup list, rescue totals, su
 
 ### How we built it
 
-We built the responsive interface with HTML, CSS, and vanilla JavaScript. A small Node.js HTTP server handles inventory, orders, pickup codes, and payment state. Ollama runs a local Qwen model to suggest item IDs from available stock. Server-side rules then check every suggestion against stock, budget, duplicate items, and the shopper's selected allergen labels. If the model is unavailable, a labelled rules-based matcher keeps the flow usable.
+We built the responsive interface with HTML, CSS, and vanilla JavaScript. A small Node.js HTTP server handles inventory, orders, pickup codes, and payment state. Locally, Ollama runs a Qwen model to suggest item IDs from available stock. On Vercel, the all-MiniLM-L6-v2 embedding model runs through Transformers.js to rank items by semantic similarity to the shopper's request. Server-side rules check every suggestion against stock, budget, duplicate items, and the shopper's selected allergen labels. If a model is unavailable, a labelled rules-based matcher keeps the flow usable. Vercel Blob persists the hosted demo's inventory and orders.
 
 For payments, the server uses PayPal Orders v2 authorization and Payments v2 capture or void endpoints. It keeps separate buyer and bakery actions, stores order state locally for this prototype, and uses request IDs for payment operations. ElevenLabs generates short spoken guides that are cached locally; the browser's speech engine is the fallback. We recorded the demonstration in a real browser with Playwright and added narration with FFmpeg.
 
@@ -38,7 +38,7 @@ Next we will connect a PayPal sandbox app and record its approval screen, add me
 
 ## Built with
 
-JavaScript, Node.js, HTML, CSS, PayPal Orders API, PayPal Payments API, Ollama, Qwen, ElevenLabs, Playwright, FFmpeg
+JavaScript, Node.js, HTML, CSS, PayPal Orders API, PayPal Payments API, Ollama, Qwen, Transformers.js, all-MiniLM-L6-v2, Vercel, Vercel Blob, ElevenLabs, Playwright, FFmpeg
 
 ## Media
 
@@ -48,4 +48,7 @@ JavaScript, Node.js, HTML, CSS, PayPal Orders API, PayPal Payments API, Ollama, 
 
 ## Try it out links
 
-No public app or GitHub repository URL is available yet. `http://localhost:3000` only works on the development machine. Add a public deployment and repository URL before submission.
+- Hosted demo: https://lastcall-paypal-ai.vercel.app
+- Public source: https://github.com/Mugunth007/lastcall-paypal-ai
+
+The hosted app currently shows labelled simulated payments. Add PayPal sandbox credentials to the Vercel project before claiming a real sandbox checkout has been demonstrated.

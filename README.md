@@ -4,16 +4,17 @@ LastCall helps a bakery sell its end-of-day surplus. A customer describes what t
 
 ## Run locally
 
-Requires Node.js 20 or newer. No npm packages are needed.
+Requires Node.js 20 or newer.
 
 ```powershell
 if (-not (Test-Path .env)) { Copy-Item .env.example .env }
+npm install
 npm start
 ```
 
 Open **http://localhost:3000**. Without PayPal credentials, the app uses clearly labelled demo payments. The complete reserve → approve → pickup → capture and cancel flows work in demo mode.
 
-The **Listen** button speaks a short guide for the current step. Set `ELEVENLABS_API_KEY` in your environment to use ElevenLabs; the app keeps generated audio in `.data/voice` so each guide is generated once. If the key is absent or the service is unavailable, the button uses the browser's speech engine. A voice ID and model can be changed with `ELEVENLABS_VOICE_ID` and `ELEVENLABS_MODEL_ID`.
+The **Listen** button speaks a short guide for the current step. Locally, set `ELEVENLABS_API_KEY` in your environment to use ElevenLabs; the app caches generated audio in `.data/voice`. If the key is absent or the service is unavailable, it uses the browser's speech engine. The hosted app serves pre-generated ElevenLabs clips from `public/voice` so no ElevenLabs key is exposed in the deployment.
 
 For the AI match, start Ollama in another terminal:
 
@@ -22,6 +23,8 @@ ollama serve
 ```
 
 Set `OLLAMA_MODEL` in `.env` to an installed model (`ollama list` shows them). This machine already has `qwen3-1.7b:latest`. If the local model is unavailable, the app shows a labelled rules-based fallback; the server still checks allergens, stock and budget. To get a standard Ollama model on another machine, run `ollama pull qwen3:1.7b` and set `OLLAMA_MODEL=qwen3:1.7b`.
+
+The [hosted demo](https://lastcall-paypal-ai.vercel.app) runs the Apache-2.0 licensed [all-MiniLM-L6-v2](https://huggingface.co/Xenova/all-MiniLM-L6-v2) embedding model through Transformers.js for semantic matching. The model is downloaded and cached when the Vercel function first needs it. Vercel Blob keeps demo inventory and orders between function runs. Every match is rechecked by server rules before reservation. The public app currently uses **simulated demo payments** until PayPal sandbox credentials are supplied.
 
 ## Connect the PayPal sandbox
 
