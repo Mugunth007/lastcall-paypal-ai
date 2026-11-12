@@ -46,6 +46,8 @@ Run `npm test` to check matching constraints, buyer-only pickup codes, inventory
 
 The [49-second narrated walkthrough](demo/lastcall-demo.mp4) shows the working app, including the AI match, simulated reservation, pickup code and counter confirmation. It is a **draft with simulated payments**, because PayPal sandbox credentials have not been added yet. Record a new walkthrough after connecting the sandbox for a submission that shows the actual PayPal approval screen.
 
+The [Devpost submission draft](demo/devpost-submission.md) includes the project story, tech tags, and media checklist. The [cover image](demo/lastcall-cover.png) and four gallery screenshots in `demo/` are all 3:2 PNG files under 5 MB. Run `npm run demo:cover` to regenerate the cover.
+
 To recreate this draft locally, run the app in demo mode, install dependencies with `npm install`, and use:
 
 ```powershell

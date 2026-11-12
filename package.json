@@ -9,7 +9,8 @@
     "test": "node --test",
     "demo:narrate": "node scripts/generate-narration.mjs",
     "demo:record": "node scripts/record-demo.mjs",
-    "demo:render": "node scripts/render-demo.mjs"
+    "demo:render": "node scripts/render-demo.mjs",
+    "demo:cover": "node scripts/render-cover.mjs"
   },
   "engines": {
     "node": ">=20"

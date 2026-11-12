@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>LastCall project cover</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght,SOFT,WONK@9..144,500,30,1;9..144,600,30,1&display=swap" rel="stylesheet">
+  <style>
+    :root{--plum:#453349;--coral:#df6e5b;--cream:#fff9ed;--peach:#f3c9a7}
+    *{box-sizing:border-box}
+    html,body{margin:0;width:1500px;height:1000px;overflow:hidden}
+    body{font-family:'DM Sans',Arial,sans-serif;background:var(--cream);color:var(--plum)}
+    .canvas{width:1500px;height:1000px;position:relative;overflow:hidden;background:radial-gradient(circle at 57% -20%,#fffdf7 0,#fff9ed 50%)}
+    .canvas:before{content:'';position:absolute;left:-160px;top:195px;width:230px;height:230px;border:2px solid #f0d6c8;border-radius:50%}
+    header{position:absolute;left:88px;right:90px;top:63px;display:flex;align-items:center;justify-content:space-between;z-index:3}
+    .brand{display:flex;align-items:center;gap:16px;font:600 43px 'Fraunces',Georgia,serif;letter-spacing:-.075em}
+    .brand-mark{width:49px;height:49px;display:grid;place-items:center;background:var(--plum);color:#ffdda0;border-radius:15px;font:34px Georgia,serif;letter-spacing:0}
+    .brand-dot{color:var(--coral)}
+    .eyebrow{font-size:15px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:#9c6d63}
+    .copy{position:absolute;left:91px;top:208px;width:790px;z-index:3}
+    .script{font:italic 28px 'Fraunces',Georgia,serif;color:#b26b5d;margin-bottom:22px}
+    h1{font:600 97px/.98 'Fraunces',Georgia,serif;letter-spacing:-.07em;margin:0;max-width:800px}
+    h1 em{display:block;color:var(--coral);font-weight:500}
+    .subtitle{font-size:27px;line-height:1.5;color:#6a5d66;width:640px;margin-top:35px}
+    .subtitle strong{color:var(--plum);font-weight:700}
+    .art{position:absolute;right:76px;top:168px;width:568px;height:620px;border-radius:45px 150px 48px 48px;background:var(--peach);overflow:hidden;box-shadow:0 24px 55px #704f5130}
+    .art:before{content:'';position:absolute;width:430px;height:430px;top:64px;left:88px;border-radius:50%;background:#ffe1a4}
+    .art:after{content:'';position:absolute;width:740px;height:260px;border-radius:50% 50% 0 0;bottom:-155px;left:-80px;background:#dcad86}
+    .spark{position:absolute;font:61px Georgia,serif;color:#fff8e8;z-index:4}
+    .spark.one{top:70px;left:58px}.spark.two{right:53px;top:250px;font-size:40px}
+    .bag{position:absolute;top:185px;left:168px;width:265px;height:322px;background:#e1b170;clip-path:polygon(5% 1%,95% 1%,100% 100%,0 100%);transform:rotate(-6deg);z-index:2;box-shadow:17px 16px 15px #9b6b5544}
+    .bag:before{content:'';position:absolute;inset:0;background:linear-gradient(100deg,#fff7de50,transparent 34%,#81583c21)}
+    .bag-fold{position:absolute;top:0;width:100%;height:43px;background:#edc589;clip-path:polygon(0 0,100% 0,100% 82%,0 100%)}
+    .bag-word{position:absolute;top:92px;left:35px;font:600 51px/.91 'Fraunces',Georgia,serif;letter-spacing:-.075em;color:#6b4548;text-align:center;transform:rotate(-2deg)}
+    .bag-stamp{position:absolute;bottom:24px;left:101px;font-size:13px;letter-spacing:.25em;color:#845857}
+    .handle{position:absolute;top:154px;left:261px;width:85px;height:100px;border:14px solid #9c694d;border-radius:50%;z-index:1}
+    .food{position:absolute;z-index:3;filter:drop-shadow(7px 14px 6px #764e4750);line-height:1}
+    .food.croissant{font-size:135px;top:67px;right:64px;transform:rotate(-15deg)}
+    .food.bread{font-size:124px;bottom:54px;left:24px;transform:rotate(-23deg)}
+    .food.lemon{font-size:116px;bottom:70px;right:12px;transform:rotate(13deg)}
+    .art-note{position:absolute;bottom:24px;left:137px;z-index:4;font:italic 22px 'Fraunces',Georgia,serif;color:#6c4a49}
+    footer{position:absolute;bottom:0;left:0;right:0;height:178px;background:var(--plum);color:#fff7ec;display:flex;align-items:center;padding:0 87px;gap:72px}
+    .step{display:flex;align-items:flex-start;gap:15px;min-width:0;flex:1}
+    .number{color:#ffc98e;font:600 25px 'Fraunces',Georgia,serif;margin-top:-1px}
+    .step b{display:block;font-size:22px;margin-bottom:7px;white-space:nowrap}
+    .step span{display:block;font-size:15px;color:#ddcbd5;white-space:nowrap}
+  </style>
+</head>
+<body>
+  <div class="canvas">
+    <header><div class="brand"><span class="brand-mark">✳</span><span>lastcall<span class="brand-dot">.</span></span></div><span class="eyebrow">AI-powered food rescue</span></header>
+    <div class="copy"><div class="script">The good stuff, right on time.</div><h1>Good food<br>deserves a<em>good ending.</em></h1><p class="subtitle"><strong>Personalized bakery rescue bags</strong> from what is fresh tonight. Reserve now. Capture payment at pickup.</p></div>
+    <div class="art"><div class="spark one">✳</div><div class="spark two">✳</div><div class="handle"></div><div class="bag"><div class="bag-fold"></div><div class="bag-word">good<br>things<br>inside.</div><div class="bag-stamp">M &amp; R</div></div><span class="food croissant">🥐</span><span class="food bread">🍞</span><span class="food lemon">🍋</span><div class="art-note">today's bake → tonight's table</div></div>
+    <footer><div class="step"><div class="number">01</div><div><b>Match with AI</b><span>Budget and ingredient aware</span></div></div><div class="step"><div class="number">02</div><div><b>Rescue tonight</b><span>Current shelf inventory</span></div></div><div class="step"><div class="number">03</div><div><b>Capture at pickup</b><span>PayPal authorize and capture</span></div></div></footer>
+  </div>
+</body>
+</html>
