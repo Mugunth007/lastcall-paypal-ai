@@ -26,6 +26,8 @@ Set `OLLAMA_MODEL` in `.env` to an installed model (`ollama list` shows them). T
 
 The [hosted demo](https://lastcall-paypal-ai.vercel.app) runs the Apache-2.0 licensed [all-MiniLM-L6-v2](https://huggingface.co/Xenova/all-MiniLM-L6-v2) embedding model through Transformers.js for semantic matching. The model is downloaded and cached when the Vercel function first needs it. Vercel Blob keeps demo inventory and orders between function runs. Every match is rechecked by server rules before reservation. The public app currently uses **simulated demo payments** until PayPal sandbox credentials are supplied.
 
+The hosted shopper → pickup flow, voice playback, and persistence after reload were verified in a browser. `scripts/smoke-hosted.mjs` reproduces that check; it requires `SMOKE_ALLOW_RESET=yes` because it resets the shared demo data.
+
 ## Connect the PayPal sandbox
 
 1. In the [PayPal Developer Dashboard](https://developer.paypal.com/dashboard/), create or open a **sandbox** REST app attached to a sandbox business account.
